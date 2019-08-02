@@ -8,11 +8,10 @@ Updates a Cloudflare DNS record with current IP.
 
     ![](https://i.imgur.com/Y0Wowli.png)
     
-1. Build and run jar
+1. Build and run
 
     ```
-    mvn clean compile assembly:single
-    java -jar target/cloudflare-ddns-1.0-SNAPSHOT-jar-with-dependencies.jar
+    bin/buildrun
     ```
 
 1. Enter API token, domain, and record name when prompted
