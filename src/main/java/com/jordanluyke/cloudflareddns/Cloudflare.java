@@ -28,13 +28,13 @@ public class Cloudflare {
     public Observable<Zone> getZones() {
         return request("/zones", HttpMethod.GET)
                 .flatMapObservable(Observable::fromIterable)
-                .flatMap(zone -> NodeUtil.parseObjectNodeInto(Zone.class, zone));
+                .flatMap(zone -> NodeUtil.parseNodeInto(Zone.class, zone));
     }
 
     public Observable<DnsRecord> getDnsRecords(String zoneId) {
         return request("/zones/" + zoneId + "/dns_records", HttpMethod.GET)
                 .flatMapObservable(Observable::fromIterable)
-                .flatMap(record -> NodeUtil.parseObjectNodeInto(DnsRecord.class, record));
+                .flatMap(record -> NodeUtil.parseNodeInto(DnsRecord.class, record));
     }
 
     public Single<DnsRecord> updateDnsRecord(String zoneId, String recordId, String type, String name, String content) {
@@ -43,7 +43,7 @@ public class Cloudflare {
         body.put("name", name);
         body.put("content", content);
         return request("/zones/" + zoneId + "/dns_records/" + recordId, HttpMethod.PUT, body)
-                .flatMap(r -> NodeUtil.parseObjectNodeInto(DnsRecord.class, r).singleOrError());
+                .flatMap(r -> NodeUtil.parseNodeInto(DnsRecord.class, r).singleOrError());
     }
 
     private Single<JsonNode> request(String path, HttpMethod method) {

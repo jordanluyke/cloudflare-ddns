@@ -38,7 +38,7 @@ public class NodeUtil {
         }
     }
 
-    public static <T> Observable<T> parseObjectNodeInto(Class<T> clazz, JsonNode body) {
+    public static <T> Observable<T> parseNodeInto(Class<T> clazz, JsonNode body) {
         try {
             return Observable.just(mapper.treeToValue(body, clazz));
         } catch (Exception e) {
@@ -54,8 +54,8 @@ public class NodeUtil {
         }
     }
 
-    public static <T> Observable<T> parseObjectNodeInto(Class<T> clazz, Optional<JsonNode> body) {
-        return body.map(jsonNode -> parseObjectNodeInto(clazz, jsonNode)).orElseGet(() -> Observable.error(new RuntimeException("Empty body")));
+    public static <T> Observable<T> parseNodeInto(Class<T> clazz, Optional<JsonNode> body) {
+        return body.map(jsonNode -> parseNodeInto(clazz, jsonNode)).orElseGet(() -> Observable.error(new RuntimeException("Empty body")));
     }
 
     public static Optional<String> get(String field, JsonNode node) {

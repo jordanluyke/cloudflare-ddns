@@ -45,7 +45,7 @@ public class MainManagerImpl implements MainManager {
                     Observable.interval(0, updateInterval, updateUnit)
                             .flatMapMaybe(Void -> update()
                                     .onErrorResumeWith(Maybe.empty()))
-                            .blockingSubscribe(new ErrorHandlingObserver<>());
+                            .blockingSubscribe();
                 });
     }
 
