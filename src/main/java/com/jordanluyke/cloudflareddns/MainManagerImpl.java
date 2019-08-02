@@ -23,7 +23,7 @@ public class MainManagerImpl implements MainManager {
     private static final Logger logger = LogManager.getLogger(MainManager.class);
     private static final long updateInterval = 5;
     private static final TimeUnit updateUnit = TimeUnit.MINUTES;
-    private static final long retryInterval = 30;
+    private static final long retryInterval = 10;
     private static final TimeUnit retryUnit = TimeUnit.SECONDS;
 
     private Config config;
