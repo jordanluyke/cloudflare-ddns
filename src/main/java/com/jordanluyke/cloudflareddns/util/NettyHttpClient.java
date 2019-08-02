@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -182,7 +183,7 @@ public class NettyHttpClient {
                     }
                 });
 
-        return channelFutureToObservable(bootstrap.connect(uri.getHost(), uri.getPort()))
+        return getChannel(bootstrap.connect(uri.getHost(), uri.getPort()))
                 .flatMap(channel -> {
                     ByteBuf content = Unpooled.copiedBuffer(body);
                     DefaultFullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, uri.toString(), content);
@@ -192,9 +193,9 @@ public class NettyHttpClient {
                     request.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
                     headers.forEach((key, value) -> request.headers().set(key, value));
                     channel.config().setConnectTimeoutMillis((int) TimeUnit.SECONDS.toMillis(2));
-                    return channelFutureToObservable(channel.writeAndFlush(request))
-                            .flatMap(c -> channelFutureToObservable(c.closeFuture()));
+                    return getChannel(channel.writeAndFlush(request));
                 })
+                .flatMap(channel -> getChannel(channel.closeFuture()))
                 .flatMap(Void -> {
                     if(res.getRawBody() == null || res.getStatusCode() == -1)
                         return Single.error(new RuntimeException("Bad response"));
@@ -203,14 +204,15 @@ public class NettyHttpClient {
                 .doFinally(group::shutdownGracefully);
     }
 
-    private static Single<Channel> channelFutureToObservable(ChannelFuture channelFuture) {
-        return Single.create(observer -> {
-            channelFuture.sync();
-            if(channelFuture.isSuccess())
-                observer.onSuccess(channelFuture.channel());
+    private static Single<Channel> getChannel(ChannelFuture channelFuture) {
+        CompletableFuture<Channel> completableFuture = new CompletableFuture<>();
+        channelFuture.addListener((ChannelFuture future) -> {
+            if(future.isSuccess())
+                completableFuture.complete(future.channel());
             else
-                observer.onError(channelFuture.cause());
-            });
+                completableFuture.completeExceptionally(future.cause());
+        });
+        return Single.fromFuture(completableFuture);
     }
 
     private static byte[] bodyToBytes(Map<String, Object> body, Map<String, String> headers) {

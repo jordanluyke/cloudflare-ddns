@@ -13,6 +13,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -62,9 +63,8 @@ public class MainManagerImpl implements MainManager {
                     }
                 })
                 .doOnError(err -> {
-                    logger.error("get ip fail");
                     if(!disconnected) {
-                        if(err instanceof UnknownHostException || err instanceof SocketException)
+                        if(err.getCause() instanceof UnknownHostException || err.getCause() instanceof SocketException)
                             logger.error("Disconnected");
                         disconnected = true;
                     }
@@ -78,7 +78,7 @@ public class MainManagerImpl implements MainManager {
                                 count--;
                             return Flowable.range(1, count);
                         }), (e, i) -> i)
-                        .flatMap(i -> Flowable.timer(retryInterval * i, retryUnit)))
+                        .flatMap(i -> Flowable.timer(retryInterval, retryUnit)))
                 .flatMapMaybe(ip -> {
                     if(deviceIp.equals(dnsRecordIp))
                         return Maybe.empty();
@@ -102,7 +102,7 @@ public class MainManagerImpl implements MainManager {
                         }))
                 .flatMapMaybe(record -> {
                     if(deviceIp.get().equals(record.getContent())) {
-                        logger.info("DNS record IP for {} is current", config.getRecordName());
+                        logger.info("DNS IP up to date");
                         dnsRecordIp = deviceIp;
                         return Maybe.empty();
                     }
