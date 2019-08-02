@@ -93,115 +93,117 @@ public class NettyHttpClient {
     }
 
     public static Single<ClientResponse> request(String url, HttpMethod method, byte[] body, Map<String, String> headers) {
-        URI uri;
-        try {
-            URI u = new URI(url);
-            uri = new URI(u.getScheme(),
-                    null,
-                    u.getHost(),
-                    HttpScheme.HTTPS.name().toString().equals(u.getScheme()) ? HttpScheme.HTTPS.port() : HttpScheme.HTTP.port(),
-                    u.getPath(),
-                    u.getQuery(),
-                    null);
-        } catch(URISyntaxException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        return Single.defer(() -> {
+            URI uri;
+            try {
+                URI u = new URI(url);
+                uri = new URI(u.getScheme(),
+                        null,
+                        u.getHost(),
+                        HttpScheme.HTTPS.name().toString().equals(u.getScheme()) ? HttpScheme.HTTPS.port() : HttpScheme.HTTP.port(),
+                        u.getPath(),
+                        u.getQuery(),
+                        null);
+            } catch(URISyntaxException e) {
+                throw new RuntimeException(e.getMessage());
+            }
 
-        SslContext sslCtx;
-        try {
-            if(uri.getPort() == HttpScheme.HTTPS.port())
-                sslCtx = SslContextBuilder.forClient()
-                    .trustManager(InsecureTrustManagerFactory.INSTANCE).build();
-            else
-                sslCtx = null;
-        } catch (SSLException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+            SslContext sslCtx;
+            try {
+                if(uri.getPort() == HttpScheme.HTTPS.port())
+                    sslCtx = SslContextBuilder.forClient()
+                        .trustManager(InsecureTrustManagerFactory.INSTANCE).build();
+                else
+                    sslCtx = null;
+            } catch (SSLException e) {
+                throw new RuntimeException(e.getMessage());
+            }
 
-        EventLoopGroup group = new NioEventLoopGroup();
-        ClientResponse res = new ClientResponse();
-        Bootstrap bootstrap = new Bootstrap()
-                .group(group)
-                .channel(NioSocketChannel.class)
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel channel) {
-                        ChannelPipeline pipeline = channel.pipeline();
-                        if(sslCtx != null)
-                            pipeline.addLast(sslCtx.newHandler(channel.alloc()));
-                        pipeline.addLast(new HttpClientCodec());
-                        pipeline.addLast(new HttpContentDecompressor());
-                        pipeline.addLast(new SimpleChannelInboundHandler() {
-                            HttpResponse response;
-                            Timer timer;
-                            ByteBuf data = Unpooled.buffer();
+            EventLoopGroup group = new NioEventLoopGroup();
+            ClientResponse res = new ClientResponse();
+            Bootstrap bootstrap = new Bootstrap()
+                    .group(group)
+                    .channel(NioSocketChannel.class)
+                    .handler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        protected void initChannel(SocketChannel channel) {
+                            ChannelPipeline pipeline = channel.pipeline();
+                            if(sslCtx != null)
+                                pipeline.addLast(sslCtx.newHandler(channel.alloc()));
+                            pipeline.addLast(new HttpClientCodec());
+                            pipeline.addLast(new HttpContentDecompressor());
+                            pipeline.addLast(new SimpleChannelInboundHandler() {
+                                HttpResponse response;
+                                Timer timer;
+                                ByteBuf data = Unpooled.buffer();
 
-                            @Override
-                            public void channelRead0(ChannelHandlerContext ctx, Object msg) {
-                                if(msg instanceof HttpResponse) {
-                                    response = (HttpResponse) msg;
+                                @Override
+                                public void channelRead0(ChannelHandlerContext ctx, Object msg) {
+                                    if(msg instanceof HttpResponse) {
+                                        response = (HttpResponse) msg;
 
-                                    if(isBinaryFile(response.headers())) {
-                                        long contentLength = HttpUtil.getContentLength(response);
-                                        logger.info("Downloading: {}", url);
-                                        timer = new Timer();
-                                        timer.schedule(new TimerTask() {
-                                            @Override
-                                            public void run() {
-                                                int percent = (int) (((double) data.readableBytes() / contentLength) * 100);
-                                                logger.info("Progress: {}%", percent);
-                                            }
-                                        }, 0, 3000);
-                                    }
-
-                                    res.setStatusCode(response.status().code());
-                                    res.setHeaders(response.headers()
-                                            .entries()
-                                            .stream()
-                                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-                                } else if(msg instanceof HttpContent) {
-                                    HttpContent content = (HttpContent) msg;
-                                    data = Unpooled.copiedBuffer(data, content.content());
-
-                                    if(content instanceof LastHttpContent) {
                                         if(isBinaryFile(response.headers())) {
-                                            timer.cancel();
-                                            timer.purge();
-                                            logger.info("Download complete");
+                                            long contentLength = HttpUtil.getContentLength(response);
+                                            logger.info("Downloading: {}", url);
+                                            timer = new Timer();
+                                            timer.schedule(new TimerTask() {
+                                                @Override
+                                                public void run() {
+                                                    int percent = (int) (((double) data.readableBytes() / contentLength) * 100);
+                                                    logger.info("Progress: {}%", percent);
+                                                }
+                                            }, 0, 3000);
                                         }
 
-                                        res.setRawBody(data.array());
-                                        ctx.close();
+                                        res.setStatusCode(response.status().code());
+                                        res.setHeaders(response.headers()
+                                                .entries()
+                                                .stream()
+                                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                                    } else if(msg instanceof HttpContent) {
+                                        HttpContent content = (HttpContent) msg;
+                                        data = Unpooled.copiedBuffer(data, content.content());
+
+                                        if(content instanceof LastHttpContent) {
+                                            if(isBinaryFile(response.headers())) {
+                                                timer.cancel();
+                                                timer.purge();
+                                                logger.info("Download complete");
+                                            }
+
+                                            res.setRawBody(data.array());
+                                            ctx.close();
+                                        }
                                     }
                                 }
-                            }
 
-                            private boolean isBinaryFile(HttpHeaders httpHeaders) {
-                                return httpHeaders.contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_OCTET_STREAM, true);
-                            }
-                        });
-                    }
-                });
+                                private boolean isBinaryFile(HttpHeaders httpHeaders) {
+                                    return httpHeaders.contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_OCTET_STREAM, true);
+                                }
+                            });
+                        }
+                    });
 
-        return getChannel(bootstrap.connect(uri.getHost(), uri.getPort()))
-                .flatMap(channel -> {
-                    ByteBuf content = Unpooled.copiedBuffer(body);
-                    DefaultFullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, uri.toString(), content);
-                    request.headers().set(HttpHeaderNames.HOST, uri.getHost());
-                    request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
-                    request.headers().set(HttpHeaderNames.CONTENT_TYPE, headers.getOrDefault(HttpHeaderNames.CONTENT_TYPE.toString(), HttpHeaderValues.APPLICATION_JSON.toString()));
-                    request.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
-                    headers.forEach((key, value) -> request.headers().set(key, value));
-                    channel.config().setConnectTimeoutMillis((int) TimeUnit.SECONDS.toMillis(2));
-                    return getChannel(channel.writeAndFlush(request));
-                })
-                .flatMap(channel -> getChannel(channel.closeFuture()))
-                .flatMap(Void -> {
-                    if(res.getRawBody() == null || res.getStatusCode() == -1)
-                        return Single.error(new RuntimeException("Bad response"));
-                    return Single.just(res);
-                })
-                .doFinally(group::shutdownGracefully);
+            return getChannel(bootstrap.connect(uri.getHost(), uri.getPort()))
+                    .flatMap(channel -> {
+                        ByteBuf content = Unpooled.copiedBuffer(body);
+                        DefaultFullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, uri.toString(), content);
+                        request.headers().set(HttpHeaderNames.HOST, uri.getHost());
+                        request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
+                        request.headers().set(HttpHeaderNames.CONTENT_TYPE, headers.getOrDefault(HttpHeaderNames.CONTENT_TYPE.toString(), HttpHeaderValues.APPLICATION_JSON.toString()));
+                        request.headers().set(HttpHeaderNames.CONTENT_LENGTH, content.readableBytes());
+                        headers.forEach((key, value) -> request.headers().set(key, value));
+                        channel.config().setConnectTimeoutMillis((int) TimeUnit.SECONDS.toMillis(2));
+                        return getChannel(channel.writeAndFlush(request));
+                    })
+                    .flatMap(channel -> getChannel(channel.closeFuture()))
+                    .flatMap(Void -> {
+                        if(res.getRawBody() == null || res.getStatusCode() == -1)
+                            return Single.error(new RuntimeException("Bad response"));
+                        return Single.just(res);
+                    })
+                    .doFinally(group::shutdownGracefully);
+        });
     }
 
     private static Single<Channel> getChannel(ChannelFuture channelFuture) {
