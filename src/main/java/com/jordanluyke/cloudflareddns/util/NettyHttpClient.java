@@ -177,6 +177,10 @@ public class NettyHttpClient {
                                     }
                                 }
 
+                                @Override
+                                public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+                                }
+
                                 private boolean isBinaryFile(HttpHeaders httpHeaders) {
                                     return httpHeaders.contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_OCTET_STREAM, true);
                                 }
