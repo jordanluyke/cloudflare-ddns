@@ -57,10 +57,9 @@ public class MainManagerImpl implements MainManager {
                         logger.info("Reconnected");
                         disconnected = false;
                     }
-                    if(!deviceIp.isPresent() || !deviceIp.get().equals(ip)) {
+                    if(!deviceIp.isPresent() || !deviceIp.get().equals(ip))
                         logger.info("Acquired IP: {}", ip);
-                        deviceIp = Optional.of(ip);
-                    }
+                    deviceIp = Optional.of(ip);
                 })
                 .doOnError(err -> {
                     if(!disconnected) {
