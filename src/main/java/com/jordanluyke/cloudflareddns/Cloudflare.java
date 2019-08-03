@@ -52,7 +52,6 @@ public class Cloudflare {
 
     private Single<JsonNode> request(String path, HttpMethod method, Map<String, Object> body) {
         return NettyHttpClient.request(baseUrl + path, method, body, getHeaders())
-                .doOnError(err -> logger.error("this is a test"))
                 .flatMap(res -> {
                     if(res.getStatusCode() != 200 || !NodeUtil.getBoolean("success", res.getBodyJson())) {
                         logger.error("{}", res);

@@ -2,7 +2,6 @@ package com.jordanluyke.cloudflareddns;
 
 import com.google.inject.Inject;
 import com.jordanluyke.cloudflareddns.model.DnsRecord;
-import com.jordanluyke.cloudflareddns.util.ErrorHandlingObserver;
 import com.jordanluyke.cloudflareddns.util.NettyHttpClient;
 import com.jordanluyke.cloudflareddns.util.NodeUtil;
 import io.reactivex.*;
@@ -13,7 +12,6 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,7 +52,7 @@ public class MainManagerImpl implements MainManager {
         return getIp()
                 .doOnSuccess(ip -> {
                     if(disconnected) {
-                        logger.info("Reconnected");
+                        logger.info("Connected");
                         disconnected = false;
                     }
                     if(!deviceIp.isPresent() || !deviceIp.get().equals(ip))
