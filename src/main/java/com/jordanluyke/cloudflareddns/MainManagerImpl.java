@@ -27,7 +27,7 @@ public class MainManagerImpl implements MainManager {
     @Inject private Config config;
     @Inject private Cloudflare cloudflare;
 
-    private boolean disconnected = false;
+    private boolean connected = false;
     private Optional<String> deviceIp = Optional.empty();
     private Optional<String> dnsRecordIp = Optional.empty();
 
@@ -45,19 +45,19 @@ public class MainManagerImpl implements MainManager {
     private Maybe<DnsRecord> update() {
         return getIp()
                 .doOnSuccess(ip -> {
-                    if(disconnected) {
+                    if(!connected) {
                         logger.info("Connected");
-                        disconnected = false;
+                        connected = true;
                     }
                     if(!deviceIp.isPresent() || !deviceIp.get().equals(ip))
                         logger.info("Acquired IP: {}", ip);
                     deviceIp = Optional.of(ip);
                 })
                 .doOnError(err -> {
-                    if(!disconnected) {
+                    if(connected) {
                         if(err.getCause() instanceof UnknownHostException || err.getCause() instanceof SocketException)
                             logger.error("Disconnected");
-                        disconnected = true;
+                        connected = false;
                     }
                 })
                 .retryWhen(errors -> errors
