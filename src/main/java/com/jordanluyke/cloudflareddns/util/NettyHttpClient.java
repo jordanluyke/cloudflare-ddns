@@ -18,6 +18,7 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -132,13 +133,13 @@ public class NettyHttpClient {
                                 pipeline.addLast(sslCtx.newHandler(channel.alloc()));
                             pipeline.addLast(new HttpClientCodec());
                             pipeline.addLast(new HttpContentDecompressor());
-                            pipeline.addLast(new SimpleChannelInboundHandler() {
+                            pipeline.addLast(new SimpleChannelInboundHandler<HttpObject>() {
                                 HttpResponse response;
                                 Timer timer;
                                 ByteBuf data = Unpooled.buffer();
 
                                 @Override
-                                public void channelRead0(ChannelHandlerContext ctx, Object msg) {
+                                public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
                                     if(msg instanceof HttpResponse) {
                                         response = (HttpResponse) msg;
 
@@ -165,13 +166,14 @@ public class NettyHttpClient {
                                         data = Unpooled.copiedBuffer(data, content.content());
 
                                         if(content instanceof LastHttpContent) {
-                                            if(isBinaryFile(response.headers())) {
+                                            if(timer != null) {
                                                 timer.cancel();
                                                 timer.purge();
                                                 logger.info("Download complete");
                                             }
 
                                             res.setRawBody(data.array());
+                                            data.release();
                                             ctx.close();
                                         }
                                     }
@@ -252,6 +254,7 @@ public class NettyHttpClient {
 
     @Getter
     @Setter
+    @ToString
     public static class ClientResponse {
         private int statusCode;
         private byte[] rawBody;
@@ -269,15 +272,6 @@ public class NettyHttpClient {
             } catch(IOException e) {
                 throw new RuntimeException("Unable to parse json");
             }
-        }
-
-        @Override
-        public String toString() {
-            return "ClientResponse{" +
-                    "statusCode=" + statusCode +
-                    ", body=" + getBodyString() +
-                    ", headers=" + headers +
-                    '}';
         }
     }
 }

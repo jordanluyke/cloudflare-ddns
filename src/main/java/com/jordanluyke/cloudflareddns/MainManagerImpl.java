@@ -24,18 +24,12 @@ public class MainManagerImpl implements MainManager {
     private static final long retryInterval = 10;
     private static final TimeUnit retryUnit = TimeUnit.SECONDS;
 
-    private Config config;
-    private Cloudflare cloudflare;
+    @Inject private Config config;
+    @Inject private Cloudflare cloudflare;
 
     private boolean disconnected = false;
     private Optional<String> deviceIp = Optional.empty();
     private Optional<String> dnsRecordIp = Optional.empty();
-
-    @Inject
-    public MainManagerImpl(Config config, Cloudflare cloudflare) {
-        this.config = config;
-        this.cloudflare = cloudflare;
-    }
 
     @Override
     public Completable start() {

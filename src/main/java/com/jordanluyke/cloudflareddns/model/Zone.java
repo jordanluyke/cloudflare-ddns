@@ -2,12 +2,7 @@ package com.jordanluyke.cloudflareddns.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.util.Arrays;
+import lombok.*;
 
 /**
  * @author Jordan Luyke <jordanluyke@gmail.com>
@@ -16,6 +11,7 @@ import java.util.Arrays;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class Zone {
     private String id;
     private String name;
@@ -35,28 +31,4 @@ public class Zone {
     private JsonNode account;
     private String[] permissions;
     private JsonNode plan;
-
-    @Override
-    public String toString() {
-        return "Zone{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", status='" + status + '\'' +
-                ", paused=" + paused +
-                ", type='" + type + '\'' +
-                ", developmentMode=" + developmentMode +
-                ", nameServers=" + Arrays.toString(nameServers) +
-                ", originalNameServers=" + Arrays.toString(originalNameServers) +
-                ", originalRegistrar='" + originalRegistrar + '\'' +
-                ", originalDnshost='" + originalDnshost + '\'' +
-                ", modifiedOn='" + modifiedOn + '\'' +
-                ", createdOn='" + createdOn + '\'' +
-                ", activatedOn='" + activatedOn + '\'' +
-                ", meta=" + meta +
-                ", owner=" + owner +
-                ", account=" + account +
-                ", permissions=" + Arrays.toString(permissions) +
-                ", plan=" + plan +
-                '}';
-    }
 }
