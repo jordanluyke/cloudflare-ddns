@@ -15,7 +15,7 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import com.jordanluyke.cloudflareddns.model.DnsRecord;
 import com.jordanluyke.cloudflareddns.util.NettyHttpClient;
 import com.jordanluyke.cloudflareddns.util.NodeUtil;
-import io.reactivex.*;
+import io.reactivex.rxjava3.core.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

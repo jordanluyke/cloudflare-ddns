@@ -3,7 +3,7 @@ package com.jordanluyke.cloudflareddns;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.jordanluyke.cloudflareddns.util.NodeUtil;
-import io.reactivex.Completable;
+import io.reactivex.rxjava3.core.Completable;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

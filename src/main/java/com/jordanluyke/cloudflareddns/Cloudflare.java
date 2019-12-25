@@ -7,13 +7,15 @@ import com.jordanluyke.cloudflareddns.model.Zone;
 import com.jordanluyke.cloudflareddns.util.NettyHttpClient;
 import com.jordanluyke.cloudflareddns.util.NodeUtil;
 import io.netty.handler.codec.http.HttpMethod;
-import io.reactivex.Observable;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
 import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Jordan Luyke <jordanluyke@gmail.com>
