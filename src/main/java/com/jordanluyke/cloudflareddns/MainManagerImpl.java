@@ -91,7 +91,7 @@ public class MainManagerImpl implements MainManager {
                                 logger.error("No DNS record found with name: {}", config.getRecordName());
                             return Single.error(err);
                         }))
-                .flatMapMaybe(record -> {
+                .flatMap(record -> {
                     if(deviceIp.get().equals(record.getContent())) {
                         logger.info("DNS IP up to date");
                         dnsRecordIp = deviceIp;

@@ -261,9 +261,11 @@ public class NettyHttpClient {
         private Map<String, String> headers = new HashMap<>();
 
         public String getBodyString() {
-            if(rawBody == null)
-                return null;
-            return new String(rawBody, StandardCharsets.UTF_8);
+            try {
+                return new String(rawBody, StandardCharsets.UTF_8);
+            } catch(Exception e) {
+                throw new RuntimeException("Unable to get string from null body");
+            }
         }
 
         public JsonNode getBodyJson() {
