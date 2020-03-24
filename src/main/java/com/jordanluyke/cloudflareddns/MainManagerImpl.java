@@ -2,6 +2,7 @@ package com.jordanluyke.cloudflareddns;
 
 import com.google.inject.Inject;
 import com.jordanluyke.cloudflareddns.model.DnsRecord;
+import com.jordanluyke.cloudflareddns.model.Zone;
 import com.jordanluyke.cloudflareddns.util.NettyHttpClient;
 import com.jordanluyke.cloudflareddns.util.NodeUtil;
 import io.reactivex.rxjava3.core.*;
@@ -73,24 +74,10 @@ public class MainManagerImpl implements MainManager {
                 .flatMapMaybe(ip -> {
                     if(deviceIp.equals(dnsRecordIp))
                         return Maybe.empty();
-                    return cloudflare.getZones()
-                            .filter(zone -> zone.getName().equals(config.getDomain()))
-                            .firstOrError()
-                            .onErrorResumeNext(err -> {
-                                if(err instanceof NoSuchElementException)
-                                    logger.error("No domain found with name: {}", config.getDomain());
-                                return Single.error(err);
-                            })
+                    return getZoneOfDomain()
                             .toMaybe();
                 })
-                .flatMapSingle(zone -> cloudflare.getDnsRecords(zone.getId())
-                        .filter(record -> record.getName().equals(config.getRecordName()) || record.getName().equals(config.getRecordName() + "." + config.getDomain()))
-                        .firstOrError()
-                        .onErrorResumeNext(err -> {
-                            if(err instanceof NoSuchElementException)
-                                logger.error("No DNS record found with name: {}", config.getRecordName());
-                            return Single.error(err);
-                        }))
+                .flatMapSingle(this::getDnsRecord)
                 .flatMap(record -> {
                     if(deviceIp.get().equals(record.getContent())) {
                         logger.info("DNS IP up to date");
@@ -103,6 +90,28 @@ public class MainManagerImpl implements MainManager {
                                 dnsRecordIp = deviceIp;
                             })
                             .toMaybe();
+                });
+    }
+
+    private Single<Zone> getZoneOfDomain() {
+        return cloudflare.getZones()
+                .filter(zone -> zone.getName().equals(config.getDomain()))
+                .firstOrError()
+                .onErrorResumeNext(err -> {
+                    if(err instanceof NoSuchElementException)
+                        logger.error("No domain found with name: {}", config.getDomain());
+                    return Single.error(err);
+                });
+    }
+
+    private Single<DnsRecord> getDnsRecord(Zone zone) {
+        return cloudflare.getDnsRecords(zone.getId())
+                .filter(record -> record.getName().equals(config.getRecordName()) || record.getName().equals(config.getRecordName() + "." + config.getDomain()))
+                .firstOrError()
+                .onErrorResumeNext(err -> {
+                    if(err instanceof NoSuchElementException)
+                        logger.error("No DNS record found with name: {}", config.getRecordName());
+                    return Single.error(err);
                 });
     }
 
