@@ -1,6 +1,6 @@
 # Cloudflare DDNS
 
-Updates a Cloudflare DNS record with current IP.
+Updates a Cloudflare DNS record with public IP of device.
 
 ### Setup
 
