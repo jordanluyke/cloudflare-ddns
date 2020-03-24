@@ -77,7 +77,7 @@ public class MainManagerImpl implements MainManager {
                     return getZoneOfDomain()
                             .toMaybe();
                 })
-                .flatMapSingle(this::getDnsRecord)
+                .flatMapSingle(zone -> getDnsRecord(zone))
                 .flatMap(record -> {
                     if(deviceIp.get().equals(record.getContent())) {
                         logger.info("DNS IP up to date");
