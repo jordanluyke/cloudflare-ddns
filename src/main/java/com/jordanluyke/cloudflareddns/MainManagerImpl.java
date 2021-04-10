@@ -26,7 +26,8 @@ public class MainManagerImpl implements MainManager {
     private static final TimeUnit retryUnit = TimeUnit.SECONDS;
 
     @Inject private Config config;
-    @Inject private Cloudflare cloudflare;
+    @Inject private CloudflareApi cloudflareApi;
+    @Inject private NettyHttpClient httpClient;
 
     private boolean connected = false;
     private Optional<String> deviceIp = Optional.empty();
@@ -84,7 +85,7 @@ public class MainManagerImpl implements MainManager {
                         dnsRecordIp = deviceIp;
                         return Maybe.empty();
                     }
-                    return cloudflare.updateDnsRecord(record.getZoneId(), record.getId(), record.getType(), record.getName(), deviceIp.get())
+                    return cloudflareApi.updateDnsRecord(record.getZoneId(), record.getId(), record.getType(), record.getName(), deviceIp.get())
                             .doOnSuccess(r -> {
                                 logger.info("Updated DNS record: {} to {}", r.getName(), r.getContent());
                                 dnsRecordIp = deviceIp;
@@ -94,7 +95,7 @@ public class MainManagerImpl implements MainManager {
     }
 
     private Single<Zone> getZoneOfDomain() {
-        return cloudflare.getZones()
+        return cloudflareApi.getZones()
                 .filter(zone -> zone.getName().equals(config.getDomain()))
                 .firstOrError()
                 .onErrorResumeNext(err -> {
@@ -105,7 +106,7 @@ public class MainManagerImpl implements MainManager {
     }
 
     private Single<DnsRecord> getDnsRecord(Zone zone) {
-        return cloudflare.getDnsRecords(zone.getId())
+        return cloudflareApi.getDnsRecords(zone.getId())
                 .filter(record -> record.getName().equals(config.getRecordName()) || record.getName().equals(config.getRecordName() + "." + config.getDomain()))
                 .firstOrError()
                 .onErrorResumeNext(err -> {
@@ -116,7 +117,7 @@ public class MainManagerImpl implements MainManager {
     }
 
     private Single<String> getIp() {
-        return NettyHttpClient.get("https://api.ipify.org?format=json")
-                .map(res -> NodeUtil.getOrThrow("ip", res.getBodyJson()));
+        return httpClient.get("https://api.ipify.org?format=json")
+                .map(res -> NodeUtil.getString("ip", res.getJsonBody()).orElseThrow(() -> new RuntimeException("Unable to get field: ip")));
     }
 }

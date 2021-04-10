@@ -34,9 +34,9 @@ public class Config {
                 return setup();
             byte[] bytes = Files.readAllBytes(configPath);
             JsonNode body = NodeUtil.getJsonNode(bytes);
-            apiToken = NodeUtil.getOrThrow("apiToken", body);
-            domain = NodeUtil.getOrThrow("domain", body);
-            recordName = NodeUtil.getOrThrow("recordName", body);
+            apiToken = NodeUtil.getString("apiToken", body).orElseThrow(() -> new RuntimeException("Field required: apiToken"));
+            domain = NodeUtil.getString("domain", body).orElseThrow(() -> new RuntimeException("Field required: domain"));
+            recordName = NodeUtil.getString("recordName", body).orElseThrow(() -> new RuntimeException("Field required: recordName"));
             logger.info("Config loaded");
             return Completable.complete();
         } catch(IOException e) {
@@ -61,11 +61,11 @@ public class Config {
     private Completable setup() {
         Scanner scanner = new Scanner(System.in);
 
-        System.out.print("API token: ");
+        System.out.print("API token (Permissions: Zone.Zone, Zone.DNS | Resources: All zones): ");
         apiToken = scanner.nextLine().trim();
-        System.out.print("Domain: ");
+        System.out.print("Domain (e.g. example.com): ");
         domain = scanner.nextLine().trim();
-        System.out.print("Record name: ");
+        System.out.print("DNS record name (e.g. home): ");
         recordName = scanner.nextLine().trim();
 
         return save();

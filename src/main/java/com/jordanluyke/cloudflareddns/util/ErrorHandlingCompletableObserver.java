@@ -20,6 +20,7 @@ public class ErrorHandlingCompletableObserver implements CompletableObserver {
 
     @Override
     public void onError(Throwable e) {
+        e.printStackTrace();
         LogManager.getLogger(loggerClass).error("Error", e);
     }
 

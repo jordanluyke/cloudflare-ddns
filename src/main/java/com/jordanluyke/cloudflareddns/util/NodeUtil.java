@@ -1,20 +1,19 @@
 package com.jordanluyke.cloudflareddns.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import io.reactivex.rxjava3.core.Observable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
-/**
- * @author Jordan Luyke <jordanluyke@gmail.com>
- */
 public class NodeUtil {
     private static final Logger logger = LogManager.getLogger(NodeUtil.class);
 
@@ -26,7 +25,7 @@ public class NodeUtil {
         try {
             return !mapper.readTree(json).isNull();
         } catch(IOException e) {
-            throw new RuntimeException(e.getMessage());
+            return false;
         }
     }
 
@@ -38,42 +37,63 @@ public class NodeUtil {
         }
     }
 
-    public static <T> Observable<T> parseNodeInto(Class<T> clazz, JsonNode body) {
+    public static byte[] writeValueAsBytes(Object o) {
         try {
-            return Observable.just(mapper.treeToValue(body, clazz));
-        } catch (Exception e) {
-            logger.error("Json serialize fail: {}", e.getMessage());
-            e.printStackTrace();
+            return mapper.writeValueAsBytes(o);
+        } catch(JsonProcessingException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public static <T> T parseNodeInto(Class<T> clazz, JsonNode body) throws RuntimeException {
+        try {
+            return mapper.treeToValue(body, clazz);
+        } catch(IllegalArgumentException | JsonProcessingException e) {
+            logger.error("Json serialize fail: {} {}", clazz, body);
             for(Field field : clazz.getFields()) {
                 field.setAccessible(true);
                 String name = field.getName();
                 if(body.get(name) == null)
-                    return Observable.error(new RuntimeException("Field required: " + field));
+                    throw new RuntimeException("Unable to get field: " + name);
             }
-            return Observable.error(new RuntimeException("Parse fail"));
+            throw new RuntimeException(e.getMessage());
         }
     }
 
-    public static <T> Observable<T> parseNodeInto(Class<T> clazz, Optional<JsonNode> body) {
-        return body.map(jsonNode -> parseNodeInto(clazz, jsonNode)).orElseGet(() -> Observable.error(new RuntimeException("Empty body")));
+    public static JsonNode parseObjectIntoNode(Object object) {
+        try {
+            return mapper.valueToTree(object);
+        } catch(IllegalArgumentException e) {
+            logger.error("Object parse failed: {}", object);
+            throw new RuntimeException("Object parse failed");
+        }
     }
 
-    public static Optional<String> get(String field, JsonNode node) {
+    public static Optional<JsonNode> get(String field, JsonNode node) {
+        return Optional.ofNullable(node.get(field));
+    }
+
+    public static Optional<String> getString(String field, JsonNode node) {
         JsonNode fieldNode = node.get(field);
         if(fieldNode == null || fieldNode.isNull())
             return Optional.empty();
         return Optional.of(fieldNode.asText());
     }
 
-    public static String getOrThrow(String field, JsonNode node) {
-        return get(field, node).orElseThrow(() -> new RuntimeException("Unable to get: " + field));
+    public static Optional<Boolean> getBoolean(String field, JsonNode node) {
+        return getString(field, node).map(Boolean::valueOf);
     }
 
-    public static Boolean getBoolean(String field, JsonNode node) {
-        return get(field, node).map(Boolean::valueOf).orElseThrow(() -> new RuntimeException("Unable to get: " + field));
+    public static Optional<Integer> getInteger(String field, JsonNode node) {
+        return getString(field, node).map(Integer::parseInt);
     }
 
-    public static Integer getInteger(String field, JsonNode node) {
-        return get(field, node).map(Integer::parseInt).orElseThrow(() -> new RuntimeException("Unable to get: " + field));
+    public static Optional<BigDecimal> getDecimal(String field, JsonNode node) {
+        return getString(field, node).map(BigDecimal::new);
+    }
+
+    public static <T> Optional<List<T>> getList(String field, JsonNode node, Class<T[]> clazz) {
+        return get(field, node)
+                .map(n -> List.of(mapper.convertValue(n, clazz)));
     }
 }
