@@ -1,5 +1,13 @@
-#!/bin/bash -e
+#!/bin/sh
 
-mvn clean compile assembly:single -T 1C -DskipTests
+set -e
 
-java -Xmx128m -jar target/cloudflare-ddns-1.0-SNAPSHOT-jar-with-dependencies.jar
+if [ "$1" != "-r" ]; then
+    mvn clean compile assembly:single -T 1C -DskipTests
+fi
+
+JAR=target/cloudflare-ddns-1.0-SNAPSHOT-jar-with-dependencies.jar
+
+if [ "$1" != "-b" ]; then
+    java -Xmx128m -jar ${JAR}
+fi
