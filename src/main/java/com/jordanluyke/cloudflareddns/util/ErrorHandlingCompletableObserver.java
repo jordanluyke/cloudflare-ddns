@@ -3,16 +3,12 @@ package com.jordanluyke.cloudflareddns.util;
 import io.reactivex.rxjava3.core.CompletableObserver;
 import io.reactivex.rxjava3.disposables.Disposable;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-/**
- * @author Jordan Luyke <jordanluyke@gmail.com>
- */
+import java.util.stream.Stream;
+
 public class ErrorHandlingCompletableObserver implements CompletableObserver {
-    private Class<?> loggerClass;
-
-    public ErrorHandlingCompletableObserver() {
-        loggerClass = getClass();
-    }
+    private static final Logger logger = LogManager.getLogger(CompletableObserver.class);
 
     @Override
     public void onComplete() {
@@ -20,8 +16,9 @@ public class ErrorHandlingCompletableObserver implements CompletableObserver {
 
     @Override
     public void onError(Throwable e) {
-        e.printStackTrace();
-        LogManager.getLogger(loggerClass).error("Error", e);
+        Stream.of(e.getStackTrace())
+            .forEach(trace -> logger.error("{}", trace));
+        logger.error("Error: {}", e.getMessage());
     }
 
     @Override

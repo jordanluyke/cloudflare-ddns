@@ -17,9 +17,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author Jordan Luyke <jordanluyke@gmail.com>
- */
 @AllArgsConstructor(onConstructor = @__(@Inject))
 public class CloudflareApi {
     private static final Logger logger = LogManager.getLogger(CloudflareApi.class);

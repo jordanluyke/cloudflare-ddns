@@ -11,8 +11,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class NodeUtil {
     private static final Logger logger = LogManager.getLogger(NodeUtil.class);
@@ -94,6 +93,6 @@ public class NodeUtil {
 
     public static <T> Optional<List<T>> getList(String field, JsonNode node, Class<T[]> clazz) {
         return get(field, node)
-                .map(n -> List.of(mapper.convertValue(n, clazz)));
+                .map(n -> new ArrayList<>(Arrays.asList(mapper.convertValue(n, clazz))));
     }
 }

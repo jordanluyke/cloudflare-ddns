@@ -15,9 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
-/**
- * @author Jordan Luyke <jordanluyke@gmail.com>
- */
 @Getter
 @Singleton
 public class Config {

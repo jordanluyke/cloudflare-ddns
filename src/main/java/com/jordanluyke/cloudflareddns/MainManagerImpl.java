@@ -15,9 +15,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author Jordan Luyke <jordanluyke@gmail.com>
- */
 public class MainManagerImpl implements MainManager {
     private static final Logger logger = LogManager.getLogger(MainManager.class);
     private static final long updateInterval = 5;
@@ -117,7 +114,7 @@ public class MainManagerImpl implements MainManager {
     }
 
     private Single<String> getIp() {
-        return httpClient.get("https://api.ipify.org?format=json")
+        return httpClient.get("https://api.ipify.org/?format=json")
                 .map(res -> NodeUtil.getString("ip", res.getJsonBody()).orElseThrow(() -> new RuntimeException("Unable to get field: ip")));
     }
 }

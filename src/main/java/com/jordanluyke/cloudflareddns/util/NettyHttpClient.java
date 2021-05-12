@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * @author Jordan Luyke <jordanluyke@gmail.com>
+ * @author Jordan Luyke <https://keybase.io/jordanluyke>
  */
 public class NettyHttpClient {
     private static final Logger logger = LogManager.getLogger(NettyHttpClient.class);
@@ -198,7 +198,12 @@ public class NettyHttpClient {
                         Map<String, String> _headers = Optional.ofNullable(headers).orElse(new HashMap<>());
                         byte[] bodyBytes = bodyToBytes(_body, _headers);
                         ByteBuf content = Unpooled.copiedBuffer(bodyBytes);
-                        DefaultFullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, uri.toString(), content);
+                        String path = uri.getPath();
+                        if(path == null || path.isEmpty())
+                            path = "/";
+                        if(uri.getQuery() != null)
+                            path += "?" + uri.getQuery();
+                        DefaultFullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, path, content);
                         request.headers().set(HttpHeaderNames.HOST, uri.getHost());
                         request.headers().set(HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
                         request.headers().set(HttpHeaderNames.CONTENT_TYPE, _headers.getOrDefault(HttpHeaderNames.CONTENT_TYPE.toString(), HttpHeaderValues.APPLICATION_JSON.toString()));

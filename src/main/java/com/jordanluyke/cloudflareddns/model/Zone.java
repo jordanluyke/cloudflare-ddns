@@ -4,9 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.*;
 
-/**
- * @author Jordan Luyke <jordanluyke@gmail.com>
- */
 @Getter
 @Setter
 @AllArgsConstructor
