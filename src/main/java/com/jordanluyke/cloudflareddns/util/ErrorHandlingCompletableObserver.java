@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.stream.Stream;
 
 public class ErrorHandlingCompletableObserver implements CompletableObserver {
-    private static final Logger logger = LogManager.getLogger(CompletableObserver.class);
+    private static final Logger logger = LogManager.getLogger(ErrorHandlingCompletableObserver.class);
 
     @Override
     public void onComplete() {
@@ -18,7 +18,7 @@ public class ErrorHandlingCompletableObserver implements CompletableObserver {
     public void onError(Throwable e) {
         Stream.of(e.getStackTrace())
             .forEach(trace -> logger.error("{}", trace));
-        logger.error("Error: {}", e.getMessage());
+        logger.error("{}: {}", e.getClass().getSimpleName(), e.getMessage());
     }
 
     @Override

@@ -22,7 +22,7 @@ public class ErrorHandlingObserver<T extends Object> implements Observer<T> {
     public void onError(Throwable e) {
         Stream.of(e.getStackTrace())
             .forEach(trace -> logger.error("{}", trace));
-        logger.error("Error: {}", e.getMessage());
+        logger.error("{}: {}", e.getClass().getSimpleName(), e.getMessage());
     }
 
     @Override
