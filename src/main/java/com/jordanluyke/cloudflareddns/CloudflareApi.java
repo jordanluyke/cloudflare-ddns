@@ -37,11 +37,12 @@ public class CloudflareApi {
                 .map(record -> NodeUtil.parseNodeInto(DnsRecord.class, record));
     }
 
-    public Single<DnsRecord> updateDnsRecord(String zoneId, String recordId, String type, String name, String content) {
+    public Single<DnsRecord> updateDnsRecord(String zoneId, String recordId, String type, String name, String content, boolean proxied) {
         Map<String, Object> body = new HashMap<>();
         body.put("type", type);
         body.put("name", name);
         body.put("content", content);
+        body.put("proxied", proxied);
         return request("/zones/" + zoneId + "/dns_records/" + recordId, HttpMethod.PUT, body)
                 .map(r -> NodeUtil.parseNodeInto(DnsRecord.class, r));
     }

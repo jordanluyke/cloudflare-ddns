@@ -82,7 +82,7 @@ public class MainManagerImpl implements MainManager {
                         dnsRecordIp = deviceIp;
                         return Maybe.empty();
                     }
-                    return cloudflareApi.updateDnsRecord(record.getZoneId(), record.getId(), record.getType(), record.getName(), deviceIp.get())
+                    return cloudflareApi.updateDnsRecord(record.getZoneId(), record.getId(), record.getType(), record.getName(), deviceIp.get(), true)
                             .doOnSuccess(r -> {
                                 logger.info("Updated DNS record: {} to {}", r.getName(), r.getContent());
                                 dnsRecordIp = deviceIp;
